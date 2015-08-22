@@ -24,8 +24,9 @@ class DBQueryMetric(models.Model):
     def create_object(**kwargs):
         return DBQueryMetric.objects.create(**kwargs)
 
-    def is_joined_query(self):
-        return 'JOIN' in self.query_sql or 'join' in self.query_sql
+    @staticmethod
+    def is_joined_query(db_metric):
+        return 'JOIN' in db_metric.query_sql or 'join' in db_metric.query_sql
 
 class BaseAggregatedMetric(models.Model):
     """
@@ -49,7 +50,7 @@ class BaseAggregatedMetric(models.Model):
         obj.num_queries = obj.num_queries + 1
         obj.query_time = BaseAggregatedMetric.get_total_query_time(obj,
                 db_metric)/obj.num_queries
-        if db_metric.is_joined_query():
+        if DBQueryMetric.is_joined_query(db_metric):
             obj.num_joined_queries = obj.num_joined_queries + 1
         obj.save()
 
@@ -58,17 +59,27 @@ class BaseAggregatedMetric(models.Model):
         raise NotImplementedError
 
     @staticmethod
-    def get_manipulated_timestamp():
-        return datetime.now().replace(second=0, microsecond=0)
+    def get_manipulated_timestamp(db_metric):
+        query_timestamp = db_metric.query_start_time
+        seconds = query_timestamp.second
+        seconds = seconds - (seconds%15)
+        return datetime.now().replace(second=seconds, microsecond=0)
 
 class TableWiseAggregatedMetric(BaseAggregatedMetric):
     table_name = models.CharField(max_length=255)
 
     @classmethod
     def aggregate_metric(cls, db_metric):
+        table_names = db_metric.query_tables
+        for table_name in table_names:
+            setattr(db_metric, 'table_name', table_name)
+            cls._delegated_aggregate_metric(db_metric)
+
+    @classmethod
+    def _delegated_aggregate_metric(cls, db_metric):
         kwargs = {
             'table_name': db_metric.table_name,
-            'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(),
+            'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(db_metric),
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
@@ -82,7 +93,7 @@ class DBWiseAggregatedMetric(BaseAggregatedMetric):
     def aggregate_metric(cls, db_metric):
         kwargs = {
             'db_name': db_metric.db_name,
-            'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(),
+            'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(db_metric),
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
@@ -96,7 +107,7 @@ class AppWiseAggregatedMetric(BaseAggregatedMetric):
     def aggregate_metric(cls, db_metric):
         kwargs = {
             'app_name': db_metric.app_name,
-            'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(),
+            'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(db_metric),
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():

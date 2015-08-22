@@ -7,11 +7,12 @@ from models import (DBQueryMetric, DBWiseAggregatedMetric,
 
 class DBMetricsConsumer(RabbitMQConsumer):
     def __init__(self, routing_key="django_db_meter"):
+        super(DBMetricsConsumer, self).__init__(routing_key=routing_key)
 
-    
     def on_message(self, message):
         message = DBMetric.deserialize(message)
 
+        print message
         if not message:
             return
 
@@ -21,3 +22,8 @@ class DBMetricsConsumer(RabbitMQConsumer):
         DBWiseAggregatedMetric.aggregate_metric(db_metric)
         TableWiseAggregatedMetric.aggregate_metric(db_metric)
         AppWiseAggregatedMetric.aggregate_metric(db_metric)
+
+
+def run_metrics_consumer():
+    consumer = DBMetricsConsumer()
+    consumer.consume()

@@ -22,18 +22,21 @@ class BaseRabbitMQ(BaseMessageBroker):
 
 class RabbitMQClient(BaseRabbitMQ):
     def send(self, msg):
-        msg_json = json.dumps(msg, cls=DjangoJSONEncoder)
         publish_kwargs = {
             'exchange': self.exchange,
             'routing_key': self.routing_key,
-            'body': msg_json
+            'body': msg
         }
         self.channel.basic_publish(**publish_kwargs)
         self.connection.close()
 
 class RabbitMQConsumer(BaseRabbitMQ):
     def _on_message(self, ch, method, properties, body):
-        self.on_message(body)
+        try:
+            self.on_message(body)
+        except Exception:
+            import traceback
+            print traceback.format_exc()
 
     def on_message(self, msg):
         print msg

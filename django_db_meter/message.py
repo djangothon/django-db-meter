@@ -66,23 +66,18 @@ class DBMetric(object):
         return query_tables
 
     def serialize(self):
-        #self.obj = serialize('json', [self.obj])
-        #print self.obj
         serialized = pickle.dumps(self)
         compressed = pylzma.compress(serialized)
         return compressed
 
     @staticmethod
-    def deserialize(compressed_feed_message):
-        decompressed_msg = pylzma.decompress(compressed_feed_message)
+    def deserialize(message):
+        decompressed_msg = pylzma.decompress(message)
 
         deserialized = pickle.loads(decompressed_msg)
         return deserialized
 
-    @classmethod
-    def send_metric(cls):
-        pass
     def send(self):
-        client = RabbitMQClient(routing_key="hw")
-        message = self.as_dict()
-        client.send(message)
+        client = RabbitMQClient(routing_key="django_db_meter")
+        serialized_message = self.serialize()
+        client.send(serialized_message)
