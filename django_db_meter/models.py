@@ -16,22 +16,22 @@ class DBQueryMetric(models.Model):
     query_sql = models.TextField()
     query_tables = models.TextField()
     db_name = models.CharField(max_length=255)
-    app_name = models.CharField(max_lenght=255)
+    app_name = models.CharField(max_length=255)
     rows_affected = models.PositiveIntegerField(default=0)
 
     @staticmethod
-    def create_obj(**kwargs):
+    def create_object(**kwargs):
         return DBQueryMetric.objects.create(**kwargs)
 
     def is_joined_query(self):
-        return 'JOIN' self.query_sql or 'join' in self.query_sql
+        return 'JOIN' in self.query_sql or 'join' in self.query_sql
 
-class BaseAggregatedMetric(models.Model)
+class BaseAggregatedMetric(models.Model):
     """
     Base model for storing aggregated data.
     """
 
-    timestamp = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField()
     num_queries = models.PositiveIntegerField(default=0)
     average_query_time = models.FloatField(default=0.0)
     num_joined_queries = models.PositiveIntegerField(default=0)
@@ -60,7 +60,7 @@ class BaseAggregatedMetric(models.Model)
     def get_manipulated_timestamp():
         return datetime.now().replace(second=0, microsecond=0)
 
-def TableWiseAggregatedMetric(BaseAggregatedMetric):
+class TableWiseAggregatedMetric(BaseAggregatedMetric):
     table_name = models.CharField(max_length=255)
 
     @classmethod
@@ -71,10 +71,10 @@ def TableWiseAggregatedMetric(BaseAggregatedMetric):
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
-            obj = cls.create(**kwargs)
+            obj = cls.objects.create(**kwargs)
         cls._aggregate_metric(obj, db_metric)
 
-def DBWiseAggregatedMetric(BaseAggregatedMetric):
+class DBWiseAggregatedMetric(BaseAggregatedMetric):
     db_name = models.CharField(max_length=255)
 
     @classmethod
@@ -85,10 +85,10 @@ def DBWiseAggregatedMetric(BaseAggregatedMetric):
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
-            obj = cls.create(**kwargs)
+            obj = cls.objects.create(**kwargs)
         cls._aggregate_metric(obj, db_metric)
 
-def AppWiseAggregatedMetric(BaseAggregatedMetric):
+class AppWiseAggregatedMetric(BaseAggregatedMetric):
     app_name = models.CharField(max_length=255)
 
     @classmethod
@@ -99,6 +99,5 @@ def AppWiseAggregatedMetric(BaseAggregatedMetric):
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
-            obj = cls.create(**kwargs)
+            obj = cls.objects.create(**kwargs)
         cls._aggregate_metric(obj, db_metric)
-

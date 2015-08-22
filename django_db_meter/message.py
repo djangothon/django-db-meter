@@ -6,18 +6,12 @@ import json
 from collections import namedtuple
 from django.core.serializers import serialize, deserialize
 from django.conf import settings
-from core.log import sclient
-from core.utils import run_async
 
-from newsfeed.activity import Actor, Target
-from newsfeed.constants import NEWSFEED_QUEUE_NAME
-from newsfeed.config import FeedConfig
-
-from realtime.kafka.producer import KafkaProducer
+from brokers.rabbitmq import RabbitMQClient
 
 
 class DBMetric(object):
-    def __init__(**kwargs):
+    def __init__(self, **kwargs):
         self.timestamp = kwargs.get('timestamp', datetime.datetime.now())
         self.query_start_time = kwargs.get('query_start_time')
         self.query_execution_time = kwargs.get('query_execution_time')
@@ -52,17 +46,13 @@ class DBMetric(object):
             'query_start_time': queryset.query_start_time,
             'query_execution_time': queryset.query_execution_time,
             'query_sql': queryset.query.__str__(),
-            'query_tables': self._get_query_tables(queryset),
-            'db_name': self._get_db_name(queryset),
+            'query_tables': cls._get_query_tables(queryset),
+            'db_name': cls._get_db(queryset),
             'app_name': queryset.model._meta.app_label,
             'rows_affected': queryset.count(),
         }
         obj = cls(**kwargs)
         return obj
-
-    def send(self):
-        msg_json = self.as_json()
-
 
     @classmethod
     def _get_db(cls, queryset):
@@ -89,20 +79,9 @@ class DBMetric(object):
         return deserialized
 
     @classmethod
-    def send_metric(cls, actor_ctype, actor_object_id, action, target_ctype,
-            target_object_id, properties={},
-            activity_datetime=None,
-            activity_source=None):
-
-        msg = cls(actor_ctype=actor_ctype,
-                  actor_object_id=actor_object_id,
-                  action=action,
-                  target_ctype=target_ctype,
-                  target_object_id=target_object_id,
-                  properties=properties,
-                  activity_datetime=activity_datetime,
-                  activity_source=activity_source)
-        msg.send()
-
-
+    def send_metric(cls):
+        pass
     def send(self):
+        client = RabbitMQClient(routing_key="hw")
+        message = self.as_dict()
+        client.send(message)

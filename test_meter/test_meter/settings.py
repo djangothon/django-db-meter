@@ -112,3 +112,9 @@ RABBITMQ_ENDPOINT = 'localhost'
 RABBITMQ_USERNAME = 'guest'
 RABBITMQ_PASSWORD = 'guest'
 RABBITMQ_PORT = 5672
+
+
+from django.db.models.sql import compiler
+from django_db_meter.compiler import CustomSQLCompiler
+
+compiler.SQLCompiler = CustomSQLCompiler
