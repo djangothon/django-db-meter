@@ -43,12 +43,15 @@ class BaseAggregatedMetric(models.Model):
 
     @staticmethod
     def get_total_query_time(obj, db_metric):
-        return (obj.num_queries * obj.average_query_time + db_metric.query_execution_time)
+        print db_metric.query_execution_time
+        query_time = (1.0 * obj.num_queries * obj.average_query_time + db_metric.query_execution_time)
+        print query_time
+        return query_time
 
     @classmethod
     def _aggregate_metric(cls, obj, db_metric):
         obj.num_queries = obj.num_queries + 1
-        obj.query_time = BaseAggregatedMetric.get_total_query_time(obj,
+        obj.average_query_time = BaseAggregatedMetric.get_total_query_time(obj,
                 db_metric)/obj.num_queries
         if DBQueryMetric.is_joined_query(db_metric):
             obj.num_joined_queries = obj.num_joined_queries + 1
@@ -84,6 +87,8 @@ class TableWiseAggregatedMetric(BaseAggregatedMetric):
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
             obj = cls.objects.create(**kwargs)
+        else:
+            obj = obj[0]
         cls._aggregate_metric(obj, db_metric)
 
 class DBWiseAggregatedMetric(BaseAggregatedMetric):
@@ -98,6 +103,8 @@ class DBWiseAggregatedMetric(BaseAggregatedMetric):
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
             obj = cls.objects.create(**kwargs)
+        else:
+            obj = obj[0]
         cls._aggregate_metric(obj, db_metric)
 
 class AppWiseAggregatedMetric(BaseAggregatedMetric):
@@ -112,6 +119,8 @@ class AppWiseAggregatedMetric(BaseAggregatedMetric):
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
             obj = cls.objects.create(**kwargs)
+        else:
+            obj = obj[0]
         cls._aggregate_metric(obj, db_metric)
 
 class TestModel(models.Model):

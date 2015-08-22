@@ -8,6 +8,7 @@ from django.core.serializers import serialize, deserialize
 from django.conf import settings
 
 from brokers.rabbitmq import RabbitMQClient
+from async.thread import ThreadAsyncClient
 
 
 class DBMetric(object):
@@ -45,7 +46,7 @@ class DBMetric(object):
             'timestamp': datetime.datetime.now(),
             'query_start_time': kwargs.get('query_start_time'),
             'query_execution_time': kwargs.get('query_execution_time'),
-            'query_sql': kwargs.get('query_sql', ''),
+            'query_sql': kwargs.get('query_sql', '')[0],
             'query_tables': cls._get_query_tables(query),
             'db_name': cls._get_db_from_name(kwargs.get('db')),
             'app_name': query.model._meta.app_label,
@@ -60,6 +61,7 @@ class DBMetric(object):
 
     @classmethod
     def _get_query_tables(self, query):
+        return query.alias_map.keys()
         query_tables = query.tables
         if query.select_related:
             query_tables.extend(query.select_related.keys())
@@ -80,4 +82,5 @@ class DBMetric(object):
     def send(self):
         client = RabbitMQClient(routing_key="django_db_meter")
         serialized_message = self.serialize()
-        client.send(serialized_message)
+        async_client = ThreadAsyncClient()
+        async_client.execute(client.send, serialized_message)
