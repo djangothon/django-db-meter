@@ -115,6 +115,18 @@ RABBITMQ_PORT = 5672
 
 
 from django.db.models.sql import compiler
-from django_db_meter.compiler import CustomSQLCompiler
+from django.db.backends.mysql import compiler as mysql_compiler
+
+
+from django_db_meter.compiler import (CustomSQLCompiler, CustomMySQLCompiler,
+                                      CustomMySQLInsertCompiler,
+                                      CustomMySQLUpdateCompiler,
+                                      CustomMySQLDeleteCompiler,
+                                      CustomMySQLAggregateCompiler)
 
 compiler.SQLCompiler = CustomSQLCompiler
+mysql_compiler.SQLCompiler = CustomMySQLCompiler
+mysql_compiler.SQLInsertCompiler = CustomMySQLInsertCompiler
+mysql_compiler.SQLUpdateCompiler = CustomMySQLUpdateCompiler
+mysql_compiler.SQLDeleteCompiler = CustomMySQLDeleteCompiler
+mysql_compiler.SQLAggregateCompiler = CustomMySQLAggregateCompiler

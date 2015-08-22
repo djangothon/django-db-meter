@@ -6,6 +6,9 @@ from models import (DBQueryMetric, DBWiseAggregatedMetric,
 
 
 class DBMetricsConsumer(RabbitMQConsumer):
+    def __init__(self, routing_key="django_db_meter"):
+
+    
     def on_message(self, message):
         message = DBMetric.deserialize(message)
 

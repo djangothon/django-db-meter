@@ -45,7 +45,7 @@ class DBMetric(object):
             'timestamp': datetime.datetime.now(),
             'query_start_time': kwargs.get('query_start_time'),
             'query_execution_time': kwargs.get('query_execution_time'),
-            'query_sql': query.__str__(),
+            'query_sql': kwargs.get('query_sql', ''),
             'query_tables': cls._get_query_tables(query),
             'db_name': cls._get_db_from_name(kwargs.get('db')),
             'app_name': query.model._meta.app_label,
