@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.contrib.auth.models import User
 from django.db import models
 
 # Create your models here.
@@ -101,3 +102,9 @@ class AppWiseAggregatedMetric(BaseAggregatedMetric):
         if not obj.exists():
             obj = cls.objects.create(**kwargs)
         cls._aggregate_metric(obj, db_metric)
+
+class TestModel(models.Model):
+    user = models.ForeignKey(User)
+    field1 = models.CharField(max_length=10)
+    filed2 = models.BooleanField(default=False)
+
