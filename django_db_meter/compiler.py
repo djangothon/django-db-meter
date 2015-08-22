@@ -16,8 +16,10 @@ class CustomSQLCompiler(SQLCompiler):
         query_start_time = datetime.now()
         result = super(CustomSQLCompiler, self).execute_sql(result_type)
         query_end_time = datetime.now()
-        result.query_start_time = query_start_time
-        result.query_execution_time = query_end_time - query_start_time
-        metric = DBMetric.from_queryset(result)
+        extra_kwargs = {
+            'query_start_time': query_start_time,
+            'query_execution_time': query_end_time - query_start_time,
+        }
+        metric = DBMetric.from_queryset(result, **extra_kwargs)
         metric.send()
 
