@@ -40,28 +40,29 @@ class DBMetric(object):
         return data_json
 
     @classmethod
-    def from_queryset(cls, queryset):
+    def from_query(cls, query, **kwargs):
         kwargs = {
             'timestamp': datetime.datetime.now(),
-            'query_start_time': queryset.query_start_time,
-            'query_execution_time': queryset.query_execution_time,
-            'query_sql': queryset.query.__str__(),
-            'query_tables': cls._get_query_tables(queryset),
-            'db_name': cls._get_db(queryset),
-            'app_name': queryset.model._meta.app_label,
-            'rows_affected': queryset.count(),
+            'query_start_time': kwargs.get('query_start_time'),
+            'query_execution_time': kwargs.get('query_execution_time'),
+            'query_sql': query.__str__(),
+            'query_tables': cls._get_query_tables(query),
+            'db_name': cls._get_db_from_name(kwargs.get('db')),
+            'app_name': query.model._meta.app_label,
+            'rows_affected': kwargs.get('rows_affected', 0),
         }
         obj = cls(**kwargs)
         return obj
 
     @classmethod
-    def _get_db(cls, queryset):
-        return settings.DATABASES.get(queryset.db).get('NAME')
+    def _get_db_from_name(cls, name):
+        return settings.DATABASES.get(name).get('NAME')
 
     @classmethod
-    def _get_query_tables(self, queryset):
-        query_tables = queryset.tables
-        query_tables.extend(queryset.select_related.keys())
+    def _get_query_tables(self, query):
+        query_tables = query.tables
+        if query.select_related:
+            query_tables.extend(query.select_related.keys())
         return query_tables
 
     def serialize(self):

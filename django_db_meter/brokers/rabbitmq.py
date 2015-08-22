@@ -2,7 +2,7 @@ import json
 import pika
 
 from django.conf import settings
-
+from django.core.serializers.json import DjangoJSONEncoder
 from base import BaseMessageBroker
 
 class BaseRabbitMQ(BaseMessageBroker):
@@ -22,7 +22,7 @@ class BaseRabbitMQ(BaseMessageBroker):
 
 class RabbitMQClient(BaseRabbitMQ):
     def send(self, msg):
-        msg_json = json.dumps(msg)
+        msg_json = json.dumps(msg, cls=DjangoJSONEncoder)
         publish_kwargs = {
             'exchange': self.exchange,
             'routing_key': self.routing_key,
