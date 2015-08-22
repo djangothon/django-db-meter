@@ -42,7 +42,7 @@ class RabbitMQConsumer(BaseRabbitMQ):
     def consume(self):
         consume_kwargs = {
             'queue': self.routing_key,
-            'no_ack': False,
+            'no_ack': True,
         }
         self.channel.basic_consume(self._on_message, **consume_kwargs)
         self.channel.start_consuming()
