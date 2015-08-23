@@ -1,6 +1,8 @@
 import random
 import threading
 
+from time import sleep
+
 from django.contrib.auth.models import User
 from models import TestModel
 
@@ -24,9 +26,11 @@ def generate_queries():
     users = [User(username=get_random_text()) for i in xrange(100)]
     for user in users:
         user.save()
+	sleep(5)
 	u = User.objects.filter(username=user.username)
 	if u.exists():
 		username = u[0].username + 'dfas'
+		sleep(3)
 		u.update(username=username)
     t = TestModel.objects.filter(user=u1)
     t = list(t)
@@ -39,6 +43,7 @@ def generate_queries():
         random_user = random.choice(users)
         t = TestModel(user=random_user)
         t.save()
+	sleep(5)
 
     for i in xrange(100):
         k = TestModel.objects.select_related('user')
@@ -46,6 +51,7 @@ def generate_queries():
     tm = TestModel.objects.all()
     for t in tm:
 	t.delete()
+	sleep(5)
 
 
 def get_random_text():

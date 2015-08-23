@@ -42,4 +42,8 @@ urlpatterns = [
         'django_db_meter.views.list_dbs',
         name='list_dbs'
     ),
+    url(r'^slow-queries/$',
+	'django_db_meter.views.slow_queries',
+	name='slow_queries'
+    )
 ]

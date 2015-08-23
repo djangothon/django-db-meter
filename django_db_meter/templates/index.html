@@ -1,7 +1,18 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-
-{% if tables %}
+{% if slow_queries %}
+   <table border=1>
+   {% for query in slow_queries %}
+   <tr>
+	<td>{{ query.query_sql }}</td>
+	<td>{{ query.query_execution_time }}</td>
+	<td>{{ query.app_name }}</td>
+	<td>{{ query.table_name }}</td>
+	<td>{{ query.db_name }}</td>
+   </tr>
+   {% endfor %}
+	</table>
+{% elif tables %}
 {% for table in tables %}
     <a href="{% url 'view_table' table %}">{{ table }}</a><br/>
 {% endfor %}
@@ -61,7 +72,7 @@ function initGraph(svg_id, x_axis_title, y_axis_title, chart_title) {
 	}
 	var parseDate = d3.time.format("%Y-%m-%dT%H:%M:%SZ").parse;
 	xScale = d3.time.scale().range([MARGINS.left, WIDTH - MARGINS.right]).domain([parseDate(data[data.length-1].timestamp),parseDate(data[0].timestamp)]);
-	yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([0, 200])
+	yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([0, 30])
 	xAxis = d3.svg.axis().scale(xScale)
 	yAxis = d3.svg.axis().scale(yScale).orient('left');
 	vis.append("svg:g").attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")").call(xAxis)

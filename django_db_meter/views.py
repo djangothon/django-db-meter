@@ -7,6 +7,7 @@ from django.db.models import get_apps, get_models
 from django.shortcuts import render
 from django.core.serializers.json import DjangoJSONEncoder
 
+from django_db_meter.models import DBQueryMetric
 from django_db_meter.models import AppWiseAggregatedMetric
 from django_db_meter.models import TableWiseAggregatedMetric
 from django_db_meter.models import DBWiseAggregatedMetric
@@ -90,3 +91,9 @@ def get_db_wise_data(request, db_name):
     data = DBWiseAggregatedMetric.objects.filter(
             db_name=db_name).order_by('-timestamp')[:40]
     return create_response(data)
+
+def slow_queries(request):
+    slow_queries = DBQueryMetric.objects.filter(query_execution_time__gte=0.05)
+    template = 'index.html'
+    ctx = {'slow_queries': slow_queries}
+    return render(request, template, ctx)
