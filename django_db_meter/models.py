@@ -10,7 +10,6 @@ class DBQueryMetric(models.Model):
     """
     Model for storing a single query related data
     """
-
     timestamp = models.DateTimeField()
     query_start_time = models.DateTimeField()
     query_execution_time = models.FloatField(default=0.0)
@@ -19,6 +18,7 @@ class DBQueryMetric(models.Model):
     db_name = models.CharField(max_length=255)
     app_name = models.CharField(max_length=255)
     rows_affected = models.PositiveIntegerField(default=0)
+    query_type = models.CharField(max_length=255, null=True, blank=True)
 
     @staticmethod
     def create_object(**kwargs):
@@ -37,15 +37,14 @@ class BaseAggregatedMetric(models.Model):
     num_queries = models.PositiveIntegerField(default=0)
     average_query_time = models.FloatField(default=0.0)
     num_joined_queries = models.PositiveIntegerField(default=0)
+    query_type = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         abstract = True
 
     @staticmethod
     def get_total_query_time(obj, db_metric):
-        print db_metric.query_execution_time
         query_time = (1.0 * obj.num_queries * obj.average_query_time + db_metric.query_execution_time)
-        print query_time
         return query_time
 
     @classmethod
@@ -83,6 +82,7 @@ class TableWiseAggregatedMetric(BaseAggregatedMetric):
         kwargs = {
             'table_name': db_metric.table_name,
             'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(db_metric),
+            'query_type': db_metric.query_type,
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
@@ -99,6 +99,7 @@ class DBWiseAggregatedMetric(BaseAggregatedMetric):
         kwargs = {
             'db_name': db_metric.db_name,
             'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(db_metric),
+            'query_type': db_metric.query_type,
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():
@@ -115,6 +116,7 @@ class AppWiseAggregatedMetric(BaseAggregatedMetric):
         kwargs = {
             'app_name': db_metric.app_name,
             'timestamp': BaseAggregatedMetric.get_manipulated_timestamp(db_metric),
+            'query_type': db_metric.query_type,
         }
         obj = cls.objects.filter(**kwargs)
         if not obj.exists():

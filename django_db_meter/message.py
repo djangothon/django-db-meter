@@ -18,6 +18,7 @@ class DBMetric(object):
         self.query_execution_time = kwargs.get('query_execution_time')
         self.query_sql = kwargs.get('query_sql')
         self.query_tables = kwargs.get('query_tables', [])
+        self.query_type = kwargs.get('query_type')
         self.db_name = kwargs.get('db_name')
         self.app_name = kwargs.get('app_name')
         self.rows_affected = kwargs.get('rows_affected')
@@ -31,7 +32,8 @@ class DBMetric(object):
             'query_tables': self.query_tables,
             'db_name': self.db_name,
             'app_name': self.app_name,
-            'rows_affected': self.rows_affected
+            'rows_affected': self.rows_affected,
+            'query_type': self.query_type
         }
         return data
 
@@ -46,11 +48,12 @@ class DBMetric(object):
             'timestamp': datetime.datetime.now(),
             'query_start_time': kwargs.get('query_start_time'),
             'query_execution_time': kwargs.get('query_execution_time'),
-            'query_sql': kwargs.get('query_sql', '')[0],
+            'query_sql': kwargs.get('query_sql', ''),
             'query_tables': cls._get_query_tables(query),
             'db_name': cls._get_db_from_name(kwargs.get('db')),
             'app_name': query.model._meta.app_label,
             'rows_affected': kwargs.get('rows_affected', 0),
+            'query_type': kwargs.get('query_type')
         }
         obj = cls(**kwargs)
         return obj

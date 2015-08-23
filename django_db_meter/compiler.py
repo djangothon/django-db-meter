@@ -1,3 +1,5 @@
+import six
+
 from datetime import datetime
 
 from django.db.models.sql.compiler import (SQLCompiler, SQLInsertCompiler,
@@ -36,25 +38,47 @@ class MetricCreator(object):
         if type(result) == list:
             rows_affected = len(result)
 
-        if type(result) == int:
-            if CustomSQLInsertCompiler in self.__bases__:
+        if isinstance(result, six.integer_types):
+            if issubclass(self.__class__, CustomSQLInsertCompiler):
                 rows_affected = 1
-            if CustomSQLUpdateCompiler in self.__bases__:
+            if issubclass(self.__class__, CustomSQLUpdateCompiler):
                 rows_affected = result
         query_execution_time = 0.0
         if (query_start_time is not None and query_end_time is not None):
             query_execution_time = query_end_time - query_start_time
             query_execution_time = query_execution_time.total_seconds()
+        query_sql = self._get_query_sql(self.as_sql())
         extra_kwargs = {
             'query_start_time': query_start_time,
             'query_execution_time': query_execution_time,
             'rows_affected': rows_affected,
-            'query_sql': self.as_sql(),
+            'query_sql': query_sql,
+            'query_type': self._get_query_type(query_sql),
             'db': self.using,
         }
         metric = DBMetric.from_query(self.query, **extra_kwargs)
         metric.send()
 
+    @classmethod
+    def _get_query_sql(cls, query_sql):
+        query_sql = query_sql[0]
+        if type(query_sql) == tuple:
+            query_sql = query_sql[0]
+        return query_sql
+
+
+    @classmethod
+    def _get_query_type(cls, query_sql):
+        print "Query SQL ", query_sql, type(query_sql)
+        if 'SELECT' in query_sql:
+            return 'SELECT'
+        if 'INSERT' in query_sql:
+            return 'INSERT'
+
+        if 'UPDATE' in query_sql:
+            return 'UPDATE'
+        if 'DELETE' in query_sql:
+            return 'DELETE'
 
 class CustomSQLCompiler(SQLCompiler, MetricCreator):
     """
