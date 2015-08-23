@@ -22,41 +22,45 @@
 {% endif %}
 
 {% if url %}
-{{ url }}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-<script src="http://code.jquery.com/jquery-latest.min.js"</script>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
 
-<script>
+<script type="text/javascript">
+var data;
 $(document).ready(function() {
-    $.ajax({
-        'url': {{ url }},
-        'method': 'POST',
-        success: function(response) {
-            console.log(response);
-        }
-    });
+	$.ajax({
+		'url': '{{ url }}',
+		'method': 'GET',
+		success: function(response) {
+    			data = response;
+			makeGraph(data);
+		}
+	});
 });
 
-var vis = d3.select("#visualisation"),
-    WIDTH = 1000,
-    HEIGHT = 500,
-    MARGINS = {
-        top: 20,
-        right: 20,
-        bottom: 20,
-        left: 50
-    },
-    xScale = d3.scale.linear().range([MARGINS.left, WIDTH - MARGINS.right]).domain([2000,2010]),
-    yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([134,215]),
-    xAxis = d3.svg.axis().scale(xScale),
-    yAxis = d3.svg.axis().scale(yScale).orient('left');
-    vis.append("svg:g").attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")").call(xAxis);
-    vis.append("svg:g").attr("transform", "translate(" + (MARGINS.left) + ",0)").call(yAxis);
-    var lineGen = d3.svg.line().x(function(d) {
-        return xScale(d.year);
-    }).y(function(d) {
-        return yScale(d.sale);
-    });
-    vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+function makeGraph(data) {
+	var vis = d3.select("#visualisation"),
+	    WIDTH = 1000,
+	    HEIGHT = 500,
+	    MARGINS = {
+		top: 20,
+		right: 20,
+		bottom: 20,
+		left: 50
+	    };	
+	    var parseDate = d3.time.format("%Y-%m-%dT%H:%M:%S").parse;
+	    xScale = d3.time.scale().range([MARGINS.left, WIDTH - MARGINS.right]).domain([parseDate(data[data.length-1].timestamp),parseDate(data[0].timestamp)]);
+	    yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([0, 50])
+	    xAxis = d3.svg.axis().scale(xScale)
+	    yAxis = d3.svg.axis().scale(yScale).orient('left');
+	    vis.append("svg:g").attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")").call(xAxis);
+	    vis.append("svg:g").attr("transform", "translate(" + (MARGINS.left) + ",0)").call(yAxis);
+	    var lineGen = d3.svg.line().x(function(d) {
+		return xScale(parseDate(d.timestamp));
+	    }).y(function(d) {
+		return yScale(d.num_queries);
+	    }).interpolate('linear');
+	    vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
 </script>
 {% endif %}

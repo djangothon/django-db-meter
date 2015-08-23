@@ -5,6 +5,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.db.models import get_apps, get_models
 from django.shortcuts import render
+from django.core.serializers.json import DjangoJSONEncoder
 
 from django_db_meter.models import AppWiseAggregatedMetric
 from django_db_meter.models import TableWiseAggregatedMetric
@@ -85,14 +86,14 @@ def get_table_wise_data(request, table_name):
 
 def get_db_wise_data(request, db_name):
     data = DBWiseAggregatedMetric.objects.filter(
-            app_name=db_name).order_by('-timestamp')[:40]
+            db_name=db_name).order_by('-timestamp')[:40]
     response = [{
         'timestamp': data_point.timestamp,
         'num_queries': data_point.num_queries,
-        'num_joined_queries': data_point.num_joined_queries,
+        #'num_joined_queries': data_point.num_joined_queries,
     } for data_point in data]
 
-    response = json.dumps(response)
+    response = json.dumps(response, cls=DjangoJSONEncoder)
     response = HttpResponse(response, content_type='application/json')
     return response
 
