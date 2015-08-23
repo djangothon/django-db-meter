@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+{% if tables %}
+{% for table in tables %}
+    <a href="{% url 'view_table' table %}">{{ table }}</a><br/>
+{% endfor %}
+{% elif apps %}
+{% for app in apps %}
+    <a href="{% url 'view_app' app %}">{{ app }}</a><br/>
+{% endfor %}
+{% elif dbs %}
+{% for db in dbs %}
+    <a href="{% url 'view_db' db %}">{{ db }}</a><br/>
+{% endfor %}
+{% elif url %}
+<svg id="visualisation" width="1000" height="500"></svg>
+{% else %}
+    <a href="{% url 'list_tables' %}">Table wise view</a><br/>
+    <a href="{% url 'list_dbs' %}">DB wise view</a><br/>
+    <a href="{% url 'list_apps' %}">App wise view</a><br/>
+{% endif %}
+
+{% if url %}
+{{ url }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<script src="http://code.jquery.com/jquery-latest.min.js"</script>
+
+<script>
+$(document).ready(function() {
+    $.ajax({
+        'url': {{ url }},
+        'method': 'POST',
+        success: function(response) {
+            console.log(response);
+        }
+    });
+});
+
+var vis = d3.select("#visualisation"),
+    WIDTH = 1000,
+    HEIGHT = 500,
+    MARGINS = {
+        top: 20,
+        right: 20,
+        bottom: 20,
+        left: 50
+    },
+    xScale = d3.scale.linear().range([MARGINS.left, WIDTH - MARGINS.right]).domain([2000,2010]),
+    yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([134,215]),
+    xAxis = d3.svg.axis().scale(xScale),
+    yAxis = d3.svg.axis().scale(yScale).orient('left');
+    vis.append("svg:g").attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")").call(xAxis);
+    vis.append("svg:g").attr("transform", "translate(" + (MARGINS.left) + ",0)").call(yAxis);
+    var lineGen = d3.svg.line().x(function(d) {
+        return xScale(d.year);
+    }).y(function(d) {
+        return yScale(d.sale);
+    });
+    vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+</script>
+{% endif %}
