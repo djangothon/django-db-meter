@@ -14,7 +14,13 @@
     <a href="{% url 'view_db' db %}">{{ db }}</a><br/>
 {% endfor %}
 {% elif url %}
-<svg id="visualisation" width="1000" height="500"></svg>
+<svg id="visualisation1" width="500" height="250"></svg>
+<svg id="visualisation2" width="500" height="250"></svg>
+<svg id="visualisation3" width="500" height="250"></svg>
+<svg id="visualisation4" width="500" height="250"></svg>
+<svg id="visualisation5" width="500" height="250"></svg>
+<svg id="visualisation6" width="500" height="250"></svg>
+<svg id="visualisation7" width="500" height="250"></svg>
 {% else %}
     <a href="{% url 'list_tables' %}">Table wise view</a><br/>
     <a href="{% url 'list_dbs' %}">DB wise view</a><br/>
@@ -27,40 +33,179 @@
 
 <script type="text/javascript">
 var data;
-$(document).ready(function() {
+function doPoll() {
 	$.ajax({
 		'url': '{{ url }}',
 		'method': 'GET',
 		success: function(response) {
-    			data = response;
-			makeGraph(data);
+			data = response;
+			d3.selectAll("svg > *").remove();
+			makeGraphs();
+			setTimeout(doPoll, 1500);
 		}
 	});
+}
+$(document).ready(function() {
+	doPoll();
 });
 
-function makeGraph(data) {
-	var vis = d3.select("#visualisation"),
-	    WIDTH = 1000,
-	    HEIGHT = 500,
-	    MARGINS = {
+function initGraph(svg_id, x_axis_title, y_axis_title, chart_title) {
+	var vis = d3.select(svg_id, x_axis_title, y_axis_title, chart_title);
+	WIDTH = 500;
+	HEIGHT = 250;
+	MARGINS = {
 		top: 20,
-		right: 20,
 		bottom: 20,
+		right: 20,
 		left: 50
-	    };	
-	    var parseDate = d3.time.format("%Y-%m-%dT%H:%M:%S").parse;
-	    xScale = d3.time.scale().range([MARGINS.left, WIDTH - MARGINS.right]).domain([parseDate(data[data.length-1].timestamp),parseDate(data[0].timestamp)]);
-	    yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([0, 50])
-	    xAxis = d3.svg.axis().scale(xScale)
-	    yAxis = d3.svg.axis().scale(yScale).orient('left');
-	    vis.append("svg:g").attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")").call(xAxis);
-	    vis.append("svg:g").attr("transform", "translate(" + (MARGINS.left) + ",0)").call(yAxis);
-	    var lineGen = d3.svg.line().x(function(d) {
-		return xScale(parseDate(d.timestamp));
-	    }).y(function(d) {
-		return yScale(d.num_queries);
-	    }).interpolate('linear');
-	    vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+	}
+	var parseDate = d3.time.format("%Y-%m-%dT%H:%M:%SZ").parse;
+	xScale = d3.time.scale().range([MARGINS.left, WIDTH - MARGINS.right]).domain([parseDate(data[data.length-1].timestamp),parseDate(data[0].timestamp)]);
+	yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([0, 200])
+	xAxis = d3.svg.axis().scale(xScale)
+	yAxis = d3.svg.axis().scale(yScale).orient('left');
+	vis.append("svg:g").attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")").call(xAxis)
+		.append('text')
+		.attr('class', 'axis-label')
+		.style('text-anchor', 'middle')
+		.attr("x", (WIDTH - MARGINS.left - MARGINS.right - 10)/2)
+		.attr("y", 100)
+		.text(x_axis_title);
+	vis.append("svg:g").attr("transform", "translate(" + (MARGINS.left) + ",0)").call(yAxis)
+		.append("text")
+		.attr("class", "axis-label")
+		.attr("transform", "rotate(-90)")
+		.style("text-anchor", "middle")
+		.attr("x", MARGINS.top - HEIGHT/2)
+		.attr("y", -40)
+		.text(y_axis_title);
+	vis.append("svg:g").attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")").call(xAxis)
+		.append('text')
+		.attr('class', 'axis-label')
+		.style('text-anchor', 'middle')
+		.attr("x", (WIDTH - MARGINS.left - MARGINS.right - 10)/2)
+		.attr("y", -200)
+		.text(chart_title);
+	graphMeta = {
+		'vis': vis,
+		'xScale': xScale,
+		'yScale': yScale,
+		'parseDate': parseDate
+	}
+	return graphMeta
+}
+
+function makeTotalQueryGraph(chart_title, x_axis_title, y_axis_title, svg_id) {
+	graphMeta = initGraph(svg_id, x_axis_title, y_axis_title, chart_title);
+	vis = graphMeta.vis;
+	xScale = graphMeta.xScale;
+	yScale = graphMeta.yScale;
+	parseDate = graphMeta.parseDate;
+
+	var lineGen = d3.svg.line().x(function(d) {
+	    return xScale(parseDate(d.timestamp));
+	}).y(function(d) {
+	    return yScale(d.num_queries);
+	}).interpolate('linear');
+	vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
+function makeInsertQueryGraph(chart_title, x_axis_title, y_axis_title, svg_id) {
+	graphMeta = initGraph(svg_id, x_axis_title, y_axis_title, chart_title);
+	vis = graphMeta.vis;
+	xScale = graphMeta.xScale;
+	yScale = graphMeta.yScale;
+	parseDate = graphMeta.parseDate;
+
+	var lineGen = d3.svg.line().x(function(d) {
+	    return xScale(parseDate(d.timestamp));
+	}).y(function(d) {
+	    return yScale(d.num_insert_queries);
+	}).interpolate('linear');
+	vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
+function makeDeleteQueryGraph(chart_title, x_axis_title, y_axis_title, svg_id) {
+	graphMeta = initGraph(svg_id, x_axis_title, y_axis_title, chart_title);
+	vis = graphMeta.vis;
+	xScale = graphMeta.xScale;
+	yScale = graphMeta.yScale;
+	parseDate = graphMeta.parseDate;
+
+	var lineGen = d3.svg.line().x(function(d) {
+	    return xScale(parseDate(d.timestamp));
+	}).y(function(d) {
+	    return yScale(d.num_delete_queries);
+	}).interpolate('linear');
+	vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
+function makeUpdateQueryGraph(chart_title, x_axis_title, y_axis_title, svg_id) {
+	graphMeta = initGraph(svg_id, x_axis_title, y_axis_title, chart_title);
+	vis = graphMeta.vis;
+	xScale = graphMeta.xScale;
+	yScale = graphMeta.yScale;
+	parseDate = graphMeta.parseDate;
+
+	var lineGen = d3.svg.line().x(function(d) {
+	    return xScale(parseDate(d.timestamp));
+	}).y(function(d) {
+	    return yScale(d.num_update_queries);
+	}).interpolate('linear');
+	vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
+function makeSelectQueryGraph(chart_title, x_axis_title, y_axis_title, svg_id) {
+	graphMeta = initGraph(svg_id, x_axis_title, y_axis_title, chart_title);
+	vis = graphMeta.vis;
+	xScale = graphMeta.xScale;
+	yScale = graphMeta.yScale;
+	parseDate = graphMeta.parseDate;
+
+	var lineGen = d3.svg.line().x(function(d) {
+	    return xScale(parseDate(d.timestamp));
+	}).y(function(d) {
+	    return yScale(d.num_select_queries);
+	}).interpolate('linear');
+	vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
+function makeJoinQueryGraph(chart_title, x_axis_title, y_axis_title, svg_id) {
+	graphMeta = initGraph(svg_id, x_axis_title, y_axis_title, chart_title);
+	vis = graphMeta.vis;
+	xScale = graphMeta.xScale;
+	yScale = graphMeta.yScale;
+	parseDate = graphMeta.parseDate;
+
+	var lineGen = d3.svg.line().x(function(d) {
+	    return xScale(parseDate(d.timestamp));
+	}).y(function(d) {
+	    return yScale(d.num_joined_queries);
+	}).interpolate('linear');
+	vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
+function makeQueryAverageTimeGraph(chart_title, x_axis_title, y_axis_title, svg_id) {
+	graphMeta = initGraph(svg_id, x_axis_title, y_axis_title, chart_title);
+	vis = graphMeta.vis;
+	xScale = graphMeta.xScale;
+	yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([0, .005])
+	parseDate = graphMeta.parseDate;
+
+	var lineGen = d3.svg.line().x(function(d) {
+	    return xScale(parseDate(d.timestamp));
+	}).y(function(d) {
+	    return yScale(d.num_joined_queries);
+	}).interpolate('linear');
+	vis.append('svg:path').attr('d', lineGen(data)).attr('stroke', 'green').attr('stroke-width', 2).attr('fill', 'none');
+}
+
+function makeGraphs() {
+	var x_axis_title = "Time";
+	var y_axis_title = "Number of queries";
+	makeTotalQueryGraph("Total queries count", x_axis_title, y_axis_title, "#visualisation1");
+	makeInsertQueryGraph("Insert queries count", x_axis_title, y_axis_title, "#visualisation2");
+	makeDeleteQueryGraph("Delete queries count", x_axis_title, y_axis_title, "#visualisation3");
+	makeUpdateQueryGraph("Update queries count", x_axis_title, y_axis_title, "#visualisation4");
+	makeInsertQueryGraph("Insert queries count", x_axis_title, y_axis_title, "#visualisation5");
+	makeJoinQueryGraph("Join queries count", x_axis_title, y_axis_title, "#visualisation6");
+	makeQueryAverageTimeGraph("Average query time graph", "Average query time", "#visualisation7");
+	
+
 }
 </script>
 {% endif %}

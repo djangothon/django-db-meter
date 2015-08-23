@@ -55,45 +55,38 @@ def list_dbs(request, db_name=None):
         }
     return render(request, template, ctx)
 
+def create_response(data):
+    response = []
+    for data_point in data:
+	data_dict = {
+		'timestamp': data_point.timestamp,
+		'num_queries': data_point.num_queries,
+		'average_query_time': data_point.average_query_time,
+		'num_joined_queries': data_point.num_joined_queries,
+	}
+	data_dict['num_insert_queries'] = data_point.num_queries if data_point.query_type == 'INSERT' else 0
+	data_dict['num_update_queries'] = data_point.num_queries if data_point.query_type == 'UPDATE' else 0
+	data_dict['num_delete_queries'] = data_point.num_queries if data_point.query_type == 'DELETE' else 0
+	data_dict['num_select_queries'] = data_point.num_queries if data_point.query_type == 'SELECT' else 0
+	response.append(data_dict)
+    response = json.dumps(response, cls=DjangoJSONEncoder)
+    response = HttpResponse(response, content_type='application/json')
+    return response
+
+
 def get_app_wise_data(request, app_name):
 
     data = AppWiseAggregatedMetric.objects.filter(
-            app_name=app_name).order_by('-timestamp')[:40]
-    response = [{
-        'timestamp': data_point.timestamp,
-        'num_queries': data_point.num_queries,
-        'num_joined_queries': data_point.num_joined_queries,
-        'average_query_time': data_point.average_query_time,
-    } for data_point in data]
-
-    response = json.dumps(response)
-    response = HttpResponse(response, content_type='application/json')
-    return response
+            app_name=app_name).order_by('-timestamp')[:-40]
+    return create_response(data)
 
 def get_table_wise_data(request, table_name):
 
     data = TableWiseAggregatedMetric.objects.filter(
             table_name=table_name).order_by('-timestamp')[:40]
-    response = [{
-        'timestamp': data_point.timestamp,
-        'num_queries': data_point.num_queries,
-        'num_joined_queries': data_point.num_joined_queries,
-    } for data_point in data]
-
-    response = json.dumps(response)
-    response = HttpResponse(response, content_type='application/json')
-    return response
+    return create_response(data)
 
 def get_db_wise_data(request, db_name):
     data = DBWiseAggregatedMetric.objects.filter(
             db_name=db_name).order_by('-timestamp')[:40]
-    response = [{
-        'timestamp': data_point.timestamp,
-        'num_queries': data_point.num_queries,
-        #'num_joined_queries': data_point.num_joined_queries,
-    } for data_point in data]
-
-    response = json.dumps(response, cls=DjangoJSONEncoder)
-    response = HttpResponse(response, content_type='application/json')
-    return response
-
+    return create_response(data)

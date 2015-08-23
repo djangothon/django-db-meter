@@ -17,13 +17,17 @@ def generate_queries():
 
     u1 = User.objects.filter(username=new_name)
     if u1:
+	u1 = u1[0]
         u1.first_name = new_name + 'hello'
         u1.save()
 
     users = [User(username=get_random_text()) for i in xrange(100)]
     for user in users:
         user.save()
-
+	u = User.objects.filter(username=user.username)
+	if u.exists():
+		username = u[0].username + 'dfas'
+		u.update(username=username)
     t = TestModel.objects.filter(user=u1)
     t = list(t)
 
@@ -39,6 +43,9 @@ def generate_queries():
     for i in xrange(100):
         k = TestModel.objects.select_related('user')
         k = list(k)
+    tm = TestModel.objects.all()
+    for t in tm:
+	t.delete()
 
 
 def get_random_text():
