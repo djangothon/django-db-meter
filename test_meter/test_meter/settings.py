@@ -16,7 +16,6 @@ import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APPS_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
-print APPS_DIR
 sys.path.insert(0, APPS_DIR)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
